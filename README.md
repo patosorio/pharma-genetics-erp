@@ -1,1 +1,1 @@
-# pharma-genetics-erp
+# Pharma Genetics ERP
