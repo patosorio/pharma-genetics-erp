@@ -31,6 +31,13 @@ INSTALLED_APPS = [
     'corsheaders',
 
     'core',
+    'genetics',
+    # 'cultivation',
+    # 'inventory',
+    # 'sales',
+    # 'purchasing',
+    # 'hr',
+    # 'accounting',
 
 ]
 
