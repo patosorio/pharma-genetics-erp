@@ -32,7 +32,7 @@ INSTALLED_APPS = [
 
     'core',
     'genetics',
-    # 'cultivation',
+    'cultivation',
     # 'inventory',
     # 'sales',
     # 'purchasing',
