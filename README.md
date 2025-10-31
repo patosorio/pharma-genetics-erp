@@ -16,13 +16,13 @@ The architecture implements a clear separation between operational and analytica
 ```
 ┌─────────────────────────────────────────────────────────────┐
 │                     DJANGO ERP (Operational)                │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │Genetics  │  │Cultivation│ │Inventory │  │  Sales   │   │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
-│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐   │
-│  │Purchasing│  │    HR     │  │Accounting│  │  Core    │   │
-│  └──────────┘  └──────────┘  └──────────┘  └──────────┘   │
-│                                                              │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
+│  │Genetics  │  │Cultivation│ │Inventory │  │  Sales   │     │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │
+│  ┌──────────┐  ┌──────────┐  ┌──────────┐  ┌──────────┐     │
+│  │Purchasing│  │    HR     │  │Accounting│  │  Core    │    │
+│  └──────────┘  └──────────┘  └──────────┘  └──────────┘     │
+│                                                             │
 │               PostgreSQL (Transactional DB)                 │
 │               ↓ (Optimized for WRITES)                      │
 └──────────────────────────┬──────────────────────────────────┘
@@ -34,7 +34,7 @@ The architecture implements a clear separation between operational and analytica
                            ↓
          ┌─────────────────────────────────────┐
          │    GCP BigQuery (Data Warehouse)    │
-         │                                     │           │
+         │                                     │           
          └──────────────────┬───────────────────┘
                            │
                            │ Direct SQL Queries
@@ -44,8 +44,8 @@ The architecture implements a clear separation between operational and analytica
          ┌─────────────────────────────────────┐
          │   PLOTLY DASH BI DASHBOARD          │
          │   (Investor & Management Analytics) │
-         │                                      │
-         │  Features:                        │
+         │                                     │
+         │  Features:                          │
          │  ├── Financial KPIs                 │
          │  ├── Production Metrics             │
          │  ├── Sales Analytics                │
