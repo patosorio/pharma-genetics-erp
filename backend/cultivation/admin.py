@@ -26,14 +26,110 @@ class MotherPlantAdmin(admin.ModelAdmin):
 
 @admin.register(ProductionBatch)
 class ProductionBatchAdmin(admin.ModelAdmin):
-    list_display = ['batch_number', 'mother_plant', 'cutting_date', 'status', 'initial_clone_count', 'rooted_clone_count', 'survival_rate']
+    list_display = [
+        'batch_number', 
+        'mother_plant', 
+        'cutting_date', 
+        'status', 
+        'initial_clone_count', 
+        'rooted_clone_count_display', 
+        'survival_rate_display',
+        'cost_per_clone'
+    ]
     list_filter = ['status', 'location', 'cutting_date']
     search_fields = ['batch_number', 'mother_plant__code']
-    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
+    readonly_fields = [
+        'cost_per_clone',
+        'rooted_clone_count_display',
+        'survival_rate_display',
+        'created_at', 
+        'updated_at', 
+        'created_by', 
+        'updated_by'
+    ]
     
-    def survival_rate(self, obj):
+    fieldsets = (
+        ('Basic Information', {
+            'fields': ('batch_number', 'mother_plant', 'location', 'status')
+        }),
+        ('Production Timeline', {
+            'fields': ('cutting_date', 'expected_rooting_date')
+        }),
+        ('Production Metrics', {
+            'fields': (
+                'initial_clone_count', 
+                'rooted_clone_count_display', 
+                'survival_rate_display'
+            )
+        }),
+        ('Costing', {
+            'fields': ('total_batch_cost', 'cost_per_clone'),
+            'description': 'Enter total_batch_cost manually. cost_per_clone is auto-calculated when batch is completed.'
+        }),
+        ('Notes', {
+            'fields': ('notes',)
+        }),
+        ('Audit Trail', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
+    
+    actions = ['complete_selected_batches']
+    
+    def rooted_clone_count_display(self, obj):
+        return obj.rooted_clone_count
+    rooted_clone_count_display.short_description = 'Rooted Count'
+    
+    def survival_rate_display(self, obj):
         return f"{obj.survival_rate:.1f}%"
-    survival_rate.short_description = 'Survival Rate'
+    survival_rate_display.short_description = 'Survival Rate'
+    
+    def complete_selected_batches(self, request, queryset):
+        """Complete batches and calculate costs"""
+        completed_count = 0
+        error_count = 0
+        
+        for batch in queryset.filter(status__in=['rooting', 'cutting']):
+            try:
+                if batch.total_batch_cost == 0:
+                    self.message_user(
+                        request,
+                        f"Warning: {batch.batch_number} has zero cost. Please set total_batch_cost first.",
+                        level='WARNING'
+                    )
+                    continue
+                
+                batch.complete_batch()
+                completed_count += 1
+                
+                self.message_user(
+                    request,
+                    f"✓ Batch {batch.batch_number} completed. "
+                    f"Rooted: {batch.rooted_clone_count}, "
+                    f"Cost per clone: {batch.cost_per_clone:.2f} THB"
+                )
+            except Exception as e:
+                error_count += 1
+                self.message_user(
+                    request,
+                    f"✗ Error completing {batch.batch_number}: {str(e)}",
+                    level='ERROR'
+                )
+        
+        if completed_count > 0:
+            self.message_user(
+                request,
+                f"Successfully completed {completed_count} batch(es)."
+            )
+        if error_count > 0:
+            self.message_user(
+                request,
+                f"Failed to complete {error_count} batch(es).",
+                level='ERROR'
+            )
+    
+    complete_selected_batches.short_description = "Complete selected batches and calculate costs"
 
 @admin.register(Clone)
 class CloneAdmin(admin.ModelAdmin):
@@ -86,7 +182,6 @@ class CloneAdmin(admin.ModelAdmin):
         return '-'
     age_display.short_description = 'Age'
     
-    # Optimize queries
     def get_queryset(self, request):
         qs = super().get_queryset(request)
         return qs.select_related(

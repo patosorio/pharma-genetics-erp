@@ -2,7 +2,7 @@
 
 ## Overview
 
-This repository contains the complete business management system for Thai Cannabis Genetics Co., a GACP-certified cannabis clone cultivation business. The system consists of two primary components:
+This repository contains the complete business management system for Genetics GACP-certified cultivation business. The system consists of two primary components:
 
 1. **Django ERP** - Operational system for day-to-day business management
 2. **Plotly Dash BI Dashboard** - Investor-facing analytics and business intelligence
