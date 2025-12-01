@@ -104,7 +104,17 @@ class Location(AuditMixin):
 
 
 class Contact(AuditMixin):
-    """Abstract base for Customer and Supplier"""
+    """Unified contact model for customers, suppliers, and other entities"""
+    contact_type = models.CharField(
+        max_length=50,
+        choices=[
+            ('customer', 'Customer'),
+            ('supplier', 'Supplier'),
+            ('vendor', 'Vendor'),
+            ('other', 'Other'),
+        ],
+        help_text='Type of contact'
+    )
     name = models.CharField(max_length=200)
     email = models.EmailField(blank=True)
     phone = models.CharField(max_length=20, blank=True)
@@ -113,7 +123,15 @@ class Contact(AuditMixin):
     is_active = models.BooleanField(default=True)
     
     class Meta:
-        abstract = True
+        db_table = 'contacts'
+        ordering = ['name']
+        indexes = [
+            models.Index(fields=['contact_type', 'is_active']),
+            models.Index(fields=['name']),
+        ]
+    
+    def __str__(self):
+        return f"{self.name} ({self.get_contact_type_display()})"
 
 
 class Currency(models.Model):
@@ -129,6 +147,22 @@ class Currency(models.Model):
     
     def __str__(self):
         return f"{self.code} ({self.symbol})"
+
+
+class TaxType(models.Model):
+    """Tax types (VAT, etc.)"""
+    name = models.CharField(max_length=100, unique=True)
+    rate = models.DecimalField(max_digits=5, decimal_places=2)  # 7% = 7.00
+    is_active = models.BooleanField(default=True)
+    
+    class Meta:
+        db_table = 'tax_types'
+        verbose_name = 'Tax Type'
+        verbose_name_plural = 'Tax Types'
+        ordering = ['name']
+    
+    def __str__(self):
+        return f"{self.name} ({self.rate}%)"
 
 
 class CompanySettings(models.Model):

@@ -1,6 +1,8 @@
 from django.db import models
+from datetime import date
 from core.models import AuditMixin, Location
 from genetics.models import Strain
+from sales.models import Order
 
 class MotherPlant(AuditMixin):
     """
@@ -201,10 +203,6 @@ class ProductionBatch(AuditMixin):
     initial_clone_count = models.IntegerField(
         help_text="Number of cuttings taken"
     )
-    rooted_clone_count = models.IntegerField(
-        default=0,
-        help_text="Number that successfully rooted"
-    )
     status = models.CharField(
         max_length=50,
         choices=[
@@ -215,6 +213,21 @@ class ProductionBatch(AuditMixin):
         ],
         default='cutting'
     )
+    
+    # Costing fields
+    total_batch_cost = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        default=0,
+        help_text="Labor + overhead allocated to this batch"
+    )
+    cost_per_clone = models.DecimalField(
+        max_digits=10,
+        decimal_places=2,
+        default=0,
+        help_text="total_batch_cost / rooted_clone_count"
+    )
+    
     notes = models.TextField(blank=True)
 
     class Meta:
@@ -225,11 +238,38 @@ class ProductionBatch(AuditMixin):
         return f"{self.batch_number} ({self.status})"
     
     @property
+    def rooted_clone_count(self):
+        """Calculate from actual rooted clones"""
+        return self.clones.filter(
+            status__in=['rooted', 'reserved', 'sold']
+        ).count()
+    
+    @property
     def survival_rate(self):
         if self.initial_clone_count == 0:
             return 0
         return (
             self.rooted_clone_count / self.initial_clone_count) * 100
+    
+    def complete_batch(self):
+        """
+        Mark batch as completed and calculate costs
+        Call this when rooting phase is done
+        """
+        rooted_count = self.rooted_clone_count
+        
+        if rooted_count > 0:
+            self.cost_per_clone = self.total_batch_cost / rooted_count
+        
+        self.status = 'completed'
+        self.save()
+        
+        # Update unit_cost for all rooted clones
+        self.clones.filter(
+            status__in=['rooted', 'reserved']
+        ).update(
+            unit_cost=self.cost_per_clone
+        )
 
 
 class Clone(AuditMixin):
@@ -272,12 +312,20 @@ class Clone(AuditMixin):
     )
     rooting_date = models.DateField(null=True, blank=True)
     unit_cost = models.DecimalField(max_digits=10, decimal_places=2, default=0)
-    # reserved_for_order = models.ForeignKey(
-    #     'sales.Order',
-    #     null=True,
-    #     blank=True,
-    #     on_delete=models.SET_NULL
-    # )
+    reserved_for_order = models.ForeignKey(
+        'sales.Order',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL
+    )
+    sold_to_order = models.ForeignKey(
+        'sales.Order',
+        null=True,
+        blank=True,
+        on_delete=models.SET_NULL,
+        related_name='sold_clones'
+    )
+    sold_date = models.DateField(null=True, blank=True)
 
 
     class Meta:
@@ -293,7 +341,6 @@ class Clone(AuditMixin):
         return f"{self.code} ({strain_name})"
     
     def save(self, *args, **kwargs):
-        # Auto-populate denormalized fields
         if self.production_batch:
             self.strain = self.production_batch.mother_plant.strain
             self.location = self.production_batch.location
@@ -307,7 +354,7 @@ class Clone(AuditMixin):
     def _generate_code(self):
         """Generate readable code: BKK-OGK-20250127-001"""
         batch = self.production_batch
-        strain_slug = batch.mother_plant.strain.slug[:3].upper()  # First 3 chars of slug
+        strain_slug = batch.mother_plant.strain.slug[:3].upper()
         location_code = batch.location.code
         date_str = batch.cutting_date.strftime('%Y%m%d')
         
@@ -318,11 +365,88 @@ class Clone(AuditMixin):
         
         return f"{location_code}-{strain_slug}-{date_str}-{existing + 1:03d}"
     
-    # @property
-    # def age_in_days(self):
-    #     if self.rooting_date:
-    #         return (date.today() - self.rooting_date).days
-    #     return 0
+    @property
+    def age_in_days(self):
+        if self.rooting_date:
+            return (date.today() - self.rooting_date).days
+        return 0
 
 
+class ProductionAssumption(AuditMixin):
+    """
+    Core production parameters model
+    """
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.PROTECT,
+        related_name='production_assumptions'
+    )
+    effective_date = models.DateField(
+        null=False,
+        blank=False,
+        help_text='The date these assumptions become effective'
+    )
+    mother_plants_count = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Number of mother plants'
+    )
+    clones_per_mother_per_cycle = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Number of clones per mother plant per cycle'
+    )
+    cycle_duration_days = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Duration of each production cycle in days'
+    )
+    survival_rate_pct = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=False,
+        blank=False,
+        help_text='Survival rate percentage (0.00 to 100.00)'
+    )
+    ramp_up_months = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Number of months to ramp up to full capacity'
+    )
+    target_capacity_utilization_pct = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        null=False,
+        blank=False,
+        help_text='Target capacity utilization percentage (0.00 to 100.00)'
+    )
+    annual_cycles = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Number of production cycles per year'
+    )
+    max_monthly_capacity = models.IntegerField(
+        null=False,
+        blank=False,
+        help_text='Maximum monthly production capacity'
+    )
+    version = models.IntegerField(
+        null=False,
+        blank=False,
+        default=1,
+        help_text='Version number for tracking assumption changes'
+    )
 
+    class Meta:
+        db_table = 'production_assumptions'
+        verbose_name_plural = 'Production Assumptions'
+        ordering = ['-effective_date', 'location']
+        indexes = [
+            models.Index(fields=['location', 'effective_date']),
+            models.Index(fields=['effective_date']),
+            models.Index(fields=['version']),
+        ]
+    
+    def __str__(self):
+        location_code = self.location.code if self.location else 'Unknown'
+        return f"{location_code} - {self.effective_date} (v{self.version})"
