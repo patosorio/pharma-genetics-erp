@@ -2,14 +2,6 @@ from django.db import models
 from core.models import AuditMixin
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-MAIN_TERPENES = [
-    ('aromatic', 'Aromatic'),
-    ('citrus', 'Citrus'),
-    ('earthy', 'Earthy'),
-    ('floral', 'Floral'),
-    ('herbal', 'Herbal'),
-    ('pine', 'Pine'),
-]
 class StrainCategory(models.Model):
     """
     Strain category model: 
@@ -72,8 +64,7 @@ class Strain(AuditMixin):
     terpene_profile = models.CharField(
         max_length=255,
         blank=True,
-        choices=MAIN_TERPENES,
-        help_text='The main terpenes list of the strain'
+        help_text='Comma-separated list of terpenes (e.g., Myrcene, Limonene, Caryophyllene)'
     )
     breeder = models.TextField(blank=True)
     lineage = models.TextField(blank=True)

@@ -1,0 +1,182 @@
+[
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Chem De La Chem",
+      "slug": "chem-de-la-chem",
+      "catalogue_year": 2025,
+      "category": 3,
+      "description": "CHEM DE LA CHEM IS A SATIVA-DOMINANT HYBRID BRED FROM CHEMDAWG, I-95, TRIANGLE KUSH, LEGEND OG, AND STARDAWG. IT DELIVERS HIGH RESIN PRODUCTION, A COMPLEX FUEL-FOR- WARD AROMA WITH SWEET EARTHY NOTES, AND STRONG POTENCY.",
+      "thc_percentage": 30.0,
+      "cbd_percentage": 1.0,
+      "terpene_profile": "Caryophyllene, Farnesene, Myrcene",
+      "breeder": "Deep Space Creations",
+      "lineage": "CHEMDOG x i95 (Triangle Kush x (Legend OG x Stardawg))",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Devil Driver",
+      "slug": "devil-driver",
+      "catalogue_year": 2025,
+      "category": 2,
+      "description": "DEVIL DRIVER BY TIKI MADMAN IS AN INDICA-DOMINANT HYBRID FROM SUNDAE DRIVER AND MELONADE GENETICS. KNOWN FOR ITS BOLD FLAVOR PROFILE— MELDING SWEET MELON, CITRUS, AND CREAMY NOTES— IT DELIVERS A POWERFUL, UPLIFTING HIGH WITH THC LEVELS REACHING UP TO 27% .",
+      "thc_percentage": 27.0,
+      "cbd_percentage": 1.0,
+      "terpene_profile": "Myrcene, Caryophyllene, Limonene",
+      "breeder": "Tiki Madman",
+      "lineage": "Sundae Driver x Melonade",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Sherbert Og Fruit",
+      "slug": "sherbert-og-fruit",
+      "catalogue_year": 2025,
+      "category": 2,
+      "description": "SHERBERT OG FRUIT COMBINES THE RICH DESSERT-LIKE SWEET- NESS OF SUNSET SHERBET WITH THE EARTHY DEPTH AND CITRUS SPICE OF OG KUSH. THIS INDICA-DOMINANT HYBRID DELIVERS POTENT, WELL-ROUNDED EFFECTS THAT OFFER RELIEF FROM STRESS, ANXIETY, PAIN, AND INFLAMMATION.",
+      "thc_percentage": 27.0,
+      "cbd_percentage": 1.0,
+      "terpene_profile": "Alpha-Pinene, Limonene, Caryophyllene, Beta-Pinene",
+      "breeder": "Fenopharm",
+      "lineage": "Sunset Sherbert (Girl Scout Cookies x Pink Panties) x OG Fruit",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Tea Time",
+      "slug": "tea-time",
+      "catalogue_year": 2025,
+      "category": 3,
+      "description": "TEA TIME IS A BALANCED HYBRID BRED BY WIZARD TREES, COM- BINING ZKITTLEZ AND RS11. IT OFFERS A SWEET, TROPICAL PROFILE WITH CREAMY SHERBET NOTES AND A SMOOTH, UPLIFT- ING YET RELAXING EFFECT.",
+      "thc_percentage": 25.0,
+      "cbd_percentage": 1.0,
+      "terpene_profile": "Humulene, Limonene, Beta-Pinene, Myrcene",
+      "breeder": "Wizard Trees",
+      "lineage": "Zkittlez x RS11",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Tricko Jordan",
+      "slug": "tricko-jordan",
+      "catalogue_year": 2025,
+      "category": 2,
+      "description": "THIS NOVEL VARIETY OFFERS A UNIQUE AROMATIC PROFILE, COMBINING CHOCOLATE AND CHERRY-LIKE FLAVORS. ITS DIS- TINCT SCENT AND FLAVOR MAKE IT A STANDOUT CHOICE FOR GROWERS AND PATIENTS.",
+      "thc_percentage": 26.29,
+      "cbd_percentage": 0.06,
+      "terpene_profile": "Myrcene, Limonene, Nerolidol",
+      "breeder": "Belief",
+      "lineage": "CHIMERA 2 X CHIMERA 3",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Zunami",
+      "slug": "zunami",
+      "catalogue_year": 2025,
+      "category": 2,
+      "description": "ZUNAMI IS AN INDICA-DOMINANT CULTIVAR RESULTING FROM A CROSS OF ZKITTLEZ, GELATO 41, AND SHERB BX1. KNOWN FOR ITS DESSERT-LIKE AROMA WITH CANDY AND CREAMY UNDER- TONES, IT DELIVERS EUPHORIC AND RELAXING EFFECTS, HIGH THC CONTENT, AND STRONG APPEAL FOR EXTRACTION-FOCUSED GROWERS.",
+      "thc_percentage": 25.0,
+      "cbd_percentage": 0.01,
+      "terpene_profile": "Terpinolene, Caryophyllene, Humulene, Linalool",
+      "breeder": "Grounded Genetics",
+      "lineage": "Zunami x Zunami (Zkittlez x Gelato 41 x Sherb BX1)",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Watermelon Blast",
+      "slug": "watermelon-blast",
+      "catalogue_year": 2025,
+      "category": 2,
+      "description": "WATERMELON BLAST IS A HYBRID CULTIVAR CREATED THROUGH A COLLABORATION BETWEEN TIKI MADMAN AND MOSCA SEEDS. IT COMBINES WATERMELON ZKITTLEZ F2 AND WATERMELON GELATO F2, BOTH SELECTED FROM EXTENSIVE PHENO HUNTS.",
+      "thc_percentage": 25.0,
+      "cbd_percentage": 0.01,
+      "terpene_profile": "Myrcene, Limonene, Caryophyllene, Humulene",
+      "breeder": "Mosca Seed X Tiki Madman",
+      "lineage": "Watermelon Skittlez (Tiki Madman) x Watermelon Gelato (Lit Farm)",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Sour Melon",
+      "slug": "sour-melon",
+      "catalogue_year": 2025,
+      "category": 1,
+      "description": "SOUR MELON IS A BALANCED HYBRID DEVELOPED BY KARMA GENETICS FROM KG MELON CUT AND KG SOUR D BX. IT DELIVERS A POTENT CANNABINOID AND TERPENE PROFILE, COMBINING HIGH RESIN PRODUCTION WITH STRONG THERAPEUTIC POTEN- TIAL.",
+      "thc_percentage": 24.0,
+      "cbd_percentage": 1.0,
+      "terpene_profile": "Limonene, Caryophyllene, Linalool, Humulene",
+      "breeder": "Karma Genetics",
+      "lineage": "KG Melon Cut x KG Sour D BX",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  },
+  {
+    "model": "genetics.strain",
+    "fields": {
+      "name": "Super Boof",
+      "slug": "super-boof",
+      "catalogue_year": 2025,
+      "category": 1,
+      "description": "SUPER BOOF IS A BALANCED HYBRID ( 50/50) RESULTING FROM THE CROSS OF BLACK CHERRY PUNCH AND TROPICANA COOKIES. WITH THC CONCENTRATIONS RANGING FROM 28% TO 32%, THIS CULTIVAR DELIVERS A POTENT AND FAST-ACTING EFFECT PRO- FILE.",
+      "thc_percentage": 30.0,
+      "cbd_percentage": 1.0,
+      "terpene_profile": "Myrcene, Linalool, Limonene, Pinene",
+      "breeder": "Blockhead (MobileJay Cut)",
+      "lineage": "Black Cherry Punch x Tropicana Cookies",
+      "is_active": true,
+      "created_at": "2025-01-01T00:00:00Z",
+      "updated_at": "2025-01-01T00:00:00Z",
+      "created_by": null,
+      "updated_by": null
+    }
+  }
+]
