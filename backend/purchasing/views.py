@@ -209,6 +209,29 @@ class ExpenseViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
         qs = self.get_queryset().filter(document_type='invoice', status='overdue')
         return Response(ExpenseSerializer(qs, many=True).data)
 
+    @action(detail=False, methods=['post'], url_path='batch_update_category')
+    def batch_update_category(self, request):
+        """
+        POST /api/v1/expenses/batch_update_category/
+        Body: { "ids": [1, 2, 3], "category": 5, "subcategory": 12 }
+        subcategory is optional — pass null to clear it.
+        """
+        ids = request.data.get('ids', [])
+        category_id = request.data.get('category')
+        subcategory_id = request.data.get('subcategory')  # None clears subcategory
+
+        if not ids or not category_id:
+            return Response(
+                {'detail': 'Both ids and category are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+
+        updated = Expense.objects.filter(id__in=ids).update(
+            category_id=category_id,
+            subcategory_id=subcategory_id,
+        )
+        return Response({'updated': updated})
+
 
 class PurchaseInvoiceViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     """Legacy purchase invoices — kept for historical data."""

@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     'rest_framework.authtoken',  # Token authentication
     'django_filters',
     'corsheaders',
+    'import_export',
 
     'core',
     'genetics',

@@ -3,7 +3,7 @@ from django.utils.text import slugify
 from core.models import AuditMixin
 from django.core.validators import MinValueValidator, MaxValueValidator
 
-class StrainCategory(models.Model):
+class StrainCategory(AuditMixin):
     """
     Strain category model: 
     - 50/50 Hybrid

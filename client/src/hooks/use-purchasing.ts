@@ -212,6 +212,23 @@ export function useUpdateExpense() {
   })
 }
 
+export function useDeleteExpense() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiClient.delete(`/expenses/${id}/`),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
+  })
+}
+
+export function useBatchUpdateExpensesCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ ids, category, subcategory }: { ids: number[]; category: number; subcategory?: number | null }) =>
+      apiClient.post("/expenses/batch_update_category/", { ids, category, subcategory: subcategory ?? null }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["expenses"] }),
+  })
+}
+
 export function useApproveExpenseInvoice() {
   const queryClient = useQueryClient()
   return useMutation({

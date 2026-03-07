@@ -577,3 +577,314 @@ class PurchaseInvoice(AuditMixin):
     @property
     def balance_due(self):
         return self.total_amount - self.paid_amount
+
+
+# ---------------------------------------------------------------------------
+# CAPEX Budget Management
+# ---------------------------------------------------------------------------
+
+class CapexBudget(AuditMixin):
+    """
+    Approved CAPEX budget for a site build-out, equipment purchase, or project.
+    Actual spend is derived from Expense records filtered by matching
+    category + location — no duplication of data.
+    """
+    name = models.CharField(
+        max_length=200,
+        help_text='Descriptive name e.g. "New Pattaya Site Fit-Out 2026"'
+    )
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.PROTECT,
+        related_name='capex_budgets',
+        help_text='Site / location this budget covers'
+    )
+    total_budget = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text='Total approved budget amount'
+    )
+    currency = models.ForeignKey(
+        Currency,
+        on_delete=models.PROTECT,
+        related_name='capex_budgets'
+    )
+    start_date = models.DateField()
+    expected_completion_date = models.DateField()
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('planning', 'Planning'),
+            ('active', 'Active'),
+            ('completed', 'Completed'),
+            ('on_hold', 'On Hold'),
+        ],
+        default='planning'
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'capex_budgets'
+        verbose_name = 'CAPEX Budget'
+        verbose_name_plural = 'CAPEX Budgets'
+        ordering = ['-start_date']
+        indexes = [
+            models.Index(fields=['location', 'status']),
+            models.Index(fields=['status']),
+        ]
+
+    def __str__(self):
+        return f"{self.name} ({self.location.code})"
+
+    @property
+    def actual_spend(self):
+        """Sum of all CAPEX expenses at this location linked to any budget line category."""
+        category_ids = self.lines.values_list('expense_category_id', flat=True)
+        result = Expense.objects.filter(
+            location=self.location,
+            category_id__in=category_ids,
+            category__category_type='capex',
+        ).aggregate(total=models.Sum('amount'))
+        return result['total'] or Decimal('0')
+
+    @property
+    def variance(self):
+        return self.total_budget - self.actual_spend
+
+    @property
+    def utilization_pct(self):
+        if self.total_budget == 0:
+            return Decimal('0')
+        return (self.actual_spend / self.total_budget * 100).quantize(Decimal('0.01'))
+
+
+class CapexBudgetLine(models.Model):
+    """
+    Individual line within a CapexBudget, tied to a CAPEX ExpenseCategory.
+    """
+    budget = models.ForeignKey(
+        CapexBudget,
+        on_delete=models.CASCADE,
+        related_name='lines'
+    )
+    expense_category = models.ForeignKey(
+        ExpenseCategory,
+        on_delete=models.PROTECT,
+        related_name='capex_budget_lines',
+        limit_choices_to={'category_type': 'capex'},
+        help_text='Must be a CAPEX-type expense category'
+    )
+    budgeted_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text='Approved budget for this line item'
+    )
+    description = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'capex_budget_lines'
+        verbose_name = 'CAPEX Budget Line'
+        verbose_name_plural = 'CAPEX Budget Lines'
+        ordering = ['expense_category__name']
+        indexes = [
+            models.Index(fields=['budget', 'expense_category']),
+        ]
+
+    def __str__(self):
+        return f"{self.budget.name} / {self.expense_category.name}: {self.budgeted_amount}"
+
+    @property
+    def actual_spend(self):
+        """Sum of CAPEX expenses at the parent budget's location for this category."""
+        result = Expense.objects.filter(
+            location=self.budget.location,
+            category=self.expense_category,
+        ).aggregate(total=models.Sum('amount'))
+        return result['total'] or Decimal('0')
+
+    @property
+    def variance(self):
+        return self.budgeted_amount - self.actual_spend
+
+
+# ---------------------------------------------------------------------------
+# Fixed Asset Register
+# ---------------------------------------------------------------------------
+
+class FixedAsset(AuditMixin):
+    """
+    Depreciable fixed asset record. Links to the originating Expense or
+    PurchaseInvoice for acquisition cost traceability.
+    """
+    asset_code = models.CharField(
+        max_length=50,
+        unique=True,
+        blank=True,
+        help_text='Auto-generated: FA-YYYY-NNN'
+    )
+    name = models.CharField(max_length=200, help_text='Asset description')
+    category = models.ForeignKey(
+        ExpenseCategory,
+        on_delete=models.PROTECT,
+        related_name='fixed_assets',
+        limit_choices_to={'category_type': 'capex'},
+        help_text='Must be a CAPEX-type expense category'
+    )
+    location = models.ForeignKey(
+        Location,
+        on_delete=models.PROTECT,
+        related_name='fixed_assets'
+    )
+
+    # Acquisition source — one of these should be populated
+    acquisition_expense = models.ForeignKey(
+        Expense,
+        on_delete=models.PROTECT,
+        related_name='fixed_assets',
+        null=True,
+        blank=True,
+        help_text='Source Expense record (for CAPEX expenses)'
+    )
+    acquisition_invoice = models.ForeignKey(
+        PurchaseInvoice,
+        on_delete=models.PROTECT,
+        related_name='fixed_assets',
+        null=True,
+        blank=True,
+        help_text='Source Purchase Invoice (alternative acquisition source)'
+    )
+
+    serial_number = models.CharField(max_length=100, blank=True)
+    acquisition_date = models.DateField()
+    acquisition_cost = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text='Total cost of acquisition (base amount, excl. tax)'
+    )
+    currency = models.ForeignKey(
+        Currency,
+        on_delete=models.PROTECT,
+        related_name='fixed_assets'
+    )
+    useful_life_months = models.IntegerField(
+        help_text='Expected useful life in months (e.g. 60 = 5 years)'
+    )
+    residual_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        default=Decimal('0'),
+        help_text='Expected salvage value at end of useful life'
+    )
+    depreciation_method = models.CharField(
+        max_length=20,
+        choices=[
+            ('straight_line', 'Straight Line'),
+            ('reducing_balance', 'Reducing Balance'),
+        ],
+        default='straight_line'
+    )
+    status = models.CharField(
+        max_length=20,
+        choices=[
+            ('active', 'Active'),
+            ('disposed', 'Disposed'),
+            ('written_off', 'Written Off'),
+        ],
+        default='active'
+    )
+    disposal_date = models.DateField(null=True, blank=True)
+    disposal_amount = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        null=True,
+        blank=True,
+        help_text='Proceeds received on disposal'
+    )
+    notes = models.TextField(blank=True)
+
+    class Meta:
+        db_table = 'fixed_assets'
+        verbose_name = 'Fixed Asset'
+        verbose_name_plural = 'Fixed Assets'
+        ordering = ['asset_code']
+        indexes = [
+            models.Index(fields=['asset_code']),
+            models.Index(fields=['location', 'status']),
+            models.Index(fields=['status']),
+            models.Index(fields=['acquisition_date']),
+        ]
+
+    def save(self, *args, **kwargs):
+        if not self.asset_code:
+            self.asset_code = _generate_number('FA', FixedAsset, 'asset_code')
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        return f"{self.asset_code} - {self.name}"
+
+    @property
+    def depreciable_amount(self):
+        return self.acquisition_cost - self.residual_value
+
+    @property
+    def monthly_depreciation(self):
+        if self.useful_life_months == 0:
+            return Decimal('0')
+        if self.depreciation_method == 'straight_line':
+            return (self.depreciable_amount / self.useful_life_months).quantize(Decimal('0.01'))
+        return Decimal('0')
+
+    @property
+    def accumulated_depreciation(self):
+        result = self.depreciation_entries.aggregate(total=models.Sum('depreciation_amount'))
+        return result['total'] or Decimal('0')
+
+    @property
+    def net_book_value(self):
+        return self.acquisition_cost - self.accumulated_depreciation
+
+
+class DepreciationEntry(models.Model):
+    """
+    Monthly depreciation record for a FixedAsset.
+    Tracks the reduction in book value period by period.
+    """
+    asset = models.ForeignKey(
+        FixedAsset,
+        on_delete=models.CASCADE,
+        related_name='depreciation_entries'
+    )
+    period_date = models.DateField(
+        help_text='First day of the depreciation month (e.g. 2026-01-01)'
+    )
+    depreciation_amount = models.DecimalField(
+        max_digits=12,
+        decimal_places=2,
+        help_text='Depreciation charged for this period'
+    )
+    book_value = models.DecimalField(
+        max_digits=15,
+        decimal_places=2,
+        help_text='Net book value after applying this entry'
+    )
+    notes = models.TextField(blank=True)
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        db_table = 'depreciation_entries'
+        verbose_name = 'Depreciation Entry'
+        verbose_name_plural = 'Depreciation Entries'
+        ordering = ['asset', 'period_date']
+        indexes = [
+            models.Index(fields=['asset', 'period_date']),
+            models.Index(fields=['period_date']),
+        ]
+        constraints = [
+            models.UniqueConstraint(
+                fields=['asset', 'period_date'],
+                name='unique_asset_period'
+            )
+        ]
+
+    def __str__(self):
+        return f"{self.asset.asset_code} — {self.period_date.strftime('%Y-%m')}: -{self.depreciation_amount}"

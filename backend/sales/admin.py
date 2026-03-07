@@ -1,8 +1,79 @@
 from django.contrib import admin
+from import_export import resources, fields
+from import_export.admin import ImportExportModelAdmin
+from import_export.widgets import ForeignKeyWidget
 from .models import (
     Customer, PriceList, Order, OrderLine,
     DeliveryNote, DeliveryNoteLine, SalesInvoice, Payment
 )
+from core.models import Location, Currency, TaxType
+
+
+class OrderResource(resources.ModelResource):
+    customer = fields.Field(
+        column_name='customer',
+        attribute='customer',
+        widget=ForeignKeyWidget(Customer, field='customer_code'),
+    )
+    location = fields.Field(
+        column_name='location',
+        attribute='location',
+        widget=ForeignKeyWidget(Location, field='code'),
+    )
+
+    class Meta:
+        model = Order
+        fields = (
+            'id', 'order_number', 'customer', 'location', 'order_date',
+            'expected_delivery_date', 'status', 'total_amount', 'notes',
+        )
+        export_order = fields
+        import_id_fields = ['order_number']
+
+
+class DeliveryNoteResource(resources.ModelResource):
+    order = fields.Field(
+        column_name='order',
+        attribute='order',
+        widget=ForeignKeyWidget(Order, field='order_number'),
+    )
+    delivery_location = fields.Field(
+        column_name='delivery_location',
+        attribute='delivery_location',
+        widget=ForeignKeyWidget(Location, field='code'),
+    )
+
+    class Meta:
+        model = DeliveryNote
+        fields = (
+            'id', 'delivery_note_number', 'order', 'delivery_date',
+            'delivered_by', 'received_by', 'delivery_location', 'status', 'notes',
+        )
+        export_order = fields
+        import_id_fields = ['delivery_note_number']
+
+
+class SalesInvoiceResource(resources.ModelResource):
+    order = fields.Field(
+        column_name='order',
+        attribute='order',
+        widget=ForeignKeyWidget(Order, field='order_number'),
+    )
+    tax_type = fields.Field(
+        column_name='tax_type',
+        attribute='tax_type',
+        widget=ForeignKeyWidget(TaxType, field='name'),
+    )
+
+    class Meta:
+        model = SalesInvoice
+        fields = (
+            'id', 'invoice_number', 'order', 'invoice_date', 'due_date',
+            'tax_type', 'base_amount', 'tax_amount', 'total_amount',
+            'paid_amount', 'status',
+        )
+        export_order = fields
+        import_id_fields = ['invoice_number']
 
 
 class OrderLineInline(admin.TabularInline):
@@ -104,7 +175,8 @@ class PriceListAdmin(admin.ModelAdmin):
 
 
 @admin.register(Order)
-class OrderAdmin(admin.ModelAdmin):
+class OrderAdmin(ImportExportModelAdmin):
+    resource_classes = [OrderResource]
     list_display = [
         'order_number',
         'customer_name',
@@ -176,7 +248,8 @@ class OrderAdmin(admin.ModelAdmin):
 
 
 @admin.register(DeliveryNote)
-class DeliveryNoteAdmin(admin.ModelAdmin):
+class DeliveryNoteAdmin(ImportExportModelAdmin):
+    resource_classes = [DeliveryNoteResource]
     list_display = [
         'delivery_note_number',
         'order_number',
@@ -246,7 +319,8 @@ class DeliveryNoteAdmin(admin.ModelAdmin):
 
 
 @admin.register(SalesInvoice)
-class SalesInvoiceAdmin(admin.ModelAdmin):
+class SalesInvoiceAdmin(ImportExportModelAdmin):
+    resource_classes = [SalesInvoiceResource]
     list_display = [
         'invoice_number',
         'customer_name',

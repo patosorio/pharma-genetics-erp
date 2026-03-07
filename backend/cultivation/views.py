@@ -17,6 +17,12 @@ from .serializers import (
 )
 
 
+MOTHER_PLANT_STATUSES = [
+    'Growing', 'Active_Production', 'Recovery',
+    'Low_Production', 'Quarantine', 'Retired', 'Under_Treatment',
+]
+
+
 class MotherPlantViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for MotherPlant model
@@ -29,11 +35,32 @@ class MotherPlantViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     search_fields = ['code']
     ordering_fields = ['code', 'cultivation_date', 'last_cut_date']
     ordering = ['code']
-    
+
     def get_serializer_class(self):
         if self.action == 'list':
             return MotherPlantListSerializer
         return MotherPlantSerializer
+
+    @action(detail=False, methods=['post'], url_path='batch_update_status')
+    def batch_update_status(self, request):
+        """
+        POST /api/v1/mother-plants/batch_update_status/
+        Body: { "ids": [1, 2, 3], "status": "Growing" }
+        """
+        ids = request.data.get('ids', [])
+        new_status = request.data.get('status')
+        if not ids or not new_status:
+            return Response(
+                {'detail': 'Both ids and status are required.'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        if new_status not in MOTHER_PLANT_STATUSES:
+            return Response(
+                {'detail': f'Invalid status. Must be one of: {", ".join(MOTHER_PLANT_STATUSES)}'},
+                status=status.HTTP_400_BAD_REQUEST,
+            )
+        updated = MotherPlant.objects.filter(id__in=ids).update(status=new_status)
+        return Response({'updated': updated})
 
 
 class ProductionBatchViewSet(AuditViewSetMixin, viewsets.ModelViewSet):

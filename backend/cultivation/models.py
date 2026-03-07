@@ -1,4 +1,4 @@
-from django.db import models
+from django.db import models, transaction
 from datetime import date
 from core.models import AuditMixin, Location
 from genetics.models import Strain
@@ -350,21 +350,29 @@ class Clone(AuditMixin):
             self.strain = self.production_batch.mother_plant.strain
             self.location = self.production_batch.location
             
-            # Auto-generate code if not provided
+            # Auto-generate code if not provided — wrapped in atomic so the
+            # select_for_update lock covers both the count query and the INSERT.
             if not self.code:
-                self.code = self._generate_code()
+                with transaction.atomic():
+                    self.code = self._generate_code()
+                    super().save(*args, **kwargs)
+                return
         
         super().save(*args, **kwargs)
     
     def _generate_code(self):
-        """Generate readable code: BKK-OGK-20250127-001"""
+        """Generate readable code: BKK-OGK-20250127-001.
+
+        Uses select_for_update() to prevent duplicate codes when multiple
+        workers create clones in the same batch concurrently.
+        Must be called inside a transaction.atomic() block.
+        """
         batch = self.production_batch
         strain_slug = batch.mother_plant.strain.slug[:3].upper()
         location_code = batch.location.code
         date_str = batch.cutting_date.strftime('%Y%m%d')
         
-        # Get next sequential number
-        existing = Clone.objects.filter(
+        existing = Clone.objects.select_for_update().filter(
             production_batch=batch
         ).count()
         

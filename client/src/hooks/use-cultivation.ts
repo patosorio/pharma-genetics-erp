@@ -46,6 +46,15 @@ export function useDeleteMotherPlant() {
   })
 }
 
+export function useBatchUpdateMotherPlantStatus() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: ({ ids, status }: { ids: number[]; status: string }) =>
+      apiClient.post("/mother-plants/batch_update_status/", { ids, status }),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["mother-plants"] }),
+  })
+}
+
 // ============ CLONES ============
 export function useClones(params: ListParams = {}) {
   return useQuery({

@@ -1,14 +1,11 @@
 "use client"
 
 import type React from "react"
-
-import { useState } from "react"
-import { ChevronLeft, ChevronRight, Search } from "lucide-react"
-import { Input } from "@/components/ui/input"
+import { ChevronLeft, ChevronRight } from "lucide-react"
 import { Button } from "@/components/ui/button"
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select"
 
-interface Column<T> {
+export interface Column<T> {
   key: string
   label: string
   render?: (item: T) => React.ReactNode
@@ -18,8 +15,7 @@ interface DataTableProps<T> {
   columns: Column<T>[]
   data: T[]
   loading?: boolean
-  searchPlaceholder?: string
-  onSearch?: (value: string) => void
+  emptyMessage?: string
   pagination?: {
     currentPage: number
     totalPages: number
@@ -28,38 +24,67 @@ interface DataTableProps<T> {
     onPageChange: (page: number) => void
     onPageSizeChange: (size: number) => void
   }
-  emptyMessage?: string
+  // Selection
+  selectable?: boolean
+  selectedIds?: Set<number | string>
+  onSelectionChange?: (ids: Set<number | string>) => void
+  batchActions?: React.ReactNode
 }
 
 export function DataTable<T extends { id: number | string }>({
   columns,
   data,
   loading,
-  searchPlaceholder = "Search...",
-  onSearch,
-  pagination,
   emptyMessage = "No data available",
+  pagination,
+  selectable,
+  selectedIds,
+  onSelectionChange,
+  batchActions,
 }: DataTableProps<T>) {
-  const [searchValue, setSearchValue] = useState("")
+  const allPageIds = data.map((item) => item.id)
+  const selectedOnPage = allPageIds.filter((id) => selectedIds?.has(id))
+  const allSelected = allPageIds.length > 0 && selectedOnPage.length === allPageIds.length
+  const someSelected = selectedOnPage.length > 0 && !allSelected
 
-  const handleSearch = (value: string) => {
-    setSearchValue(value)
-    onSearch?.(value)
+  const toggleAll = () => {
+    if (!onSelectionChange || !selectedIds) return
+    const next = new Set(selectedIds)
+    if (allSelected) {
+      allPageIds.forEach((id) => next.delete(id))
+    } else {
+      allPageIds.forEach((id) => next.add(id))
+    }
+    onSelectionChange(next)
   }
 
+  const toggleRow = (id: number | string) => {
+    if (!onSelectionChange || !selectedIds) return
+    const next = new Set(selectedIds)
+    if (next.has(id)) next.delete(id)
+    else next.add(id)
+    onSelectionChange(next)
+  }
+
+  const selectionCount = selectedIds?.size ?? 0
+
   return (
-    <div className="space-y-4">
-      {onSearch && (
-        <div className="flex items-center gap-4">
-          <div className="relative flex-1 max-w-sm">
-            <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-muted-foreground" />
-            <Input
-              placeholder={searchPlaceholder}
-              value={searchValue}
-              onChange={(e) => handleSearch(e.target.value)}
-              className="pl-9 thin-border"
-            />
-          </div>
+    <div className="space-y-3">
+      {/* Batch action bar */}
+      {selectable && selectionCount > 0 && batchActions && (
+        <div className="flex items-center gap-3 px-4 py-2 bg-primary/5 border border-primary/20 rounded-lg">
+          <span className="text-sm font-medium text-primary">
+            {selectionCount} selected
+          </span>
+          <div className="flex items-center gap-2">{batchActions}</div>
+          <Button
+            variant="ghost"
+            size="sm"
+            className="ml-auto text-muted-foreground"
+            onClick={() => onSelectionChange?.(new Set())}
+          >
+            Clear
+          </Button>
         </div>
       )}
 
@@ -68,6 +93,18 @@ export function DataTable<T extends { id: number | string }>({
           <table className="w-full">
             <thead className="bg-muted">
               <tr>
+                {selectable && (
+                  <th className="px-4 py-3 w-10 border-b border-border">
+                    <input
+                      type="checkbox"
+                      checked={allSelected}
+                      ref={(el) => { if (el) el.indeterminate = someSelected }}
+                      onChange={toggleAll}
+                      aria-label="Select all"
+                      className="h-4 w-4 cursor-pointer accent-primary"
+                    />
+                  </th>
+                )}
                 {columns.map((column) => (
                   <th key={column.key} className="px-4 py-3 text-left text-sm font-medium border-b border-border">
                     {column.label}
@@ -78,22 +115,33 @@ export function DataTable<T extends { id: number | string }>({
             <tbody>
               {loading ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-4 py-8 text-center text-muted-foreground">
                     Loading...
                   </td>
                 </tr>
               ) : data.length === 0 ? (
                 <tr>
-                  <td colSpan={columns.length} className="px-4 py-8 text-center text-muted-foreground">
+                  <td colSpan={columns.length + (selectable ? 1 : 0)} className="px-4 py-8 text-center text-muted-foreground">
                     {emptyMessage}
                   </td>
                 </tr>
               ) : (
                 data.map((item) => (
                   <tr key={item.id} className="hover:bg-muted/50 transition-colors">
+                    {selectable && (
+                      <td className="px-4 py-3 w-10 border-b border-border">
+                        <input
+                          type="checkbox"
+                          checked={selectedIds?.has(item.id) ?? false}
+                          onChange={() => toggleRow(item.id)}
+                          aria-label="Select row"
+                          className="h-4 w-4 cursor-pointer accent-primary"
+                        />
+                      </td>
+                    )}
                     {columns.map((column) => (
                       <td key={column.key} className="px-4 py-3 text-sm border-b border-border">
-                        {column.render ? column.render(item) : (item as any)[column.key]}
+                        {column.render ? column.render(item) : (item as Record<string, unknown>)[column.key] as React.ReactNode}
                       </td>
                     ))}
                   </tr>
@@ -123,7 +171,7 @@ export function DataTable<T extends { id: number | string }>({
               </SelectContent>
             </Select>
             <span className="text-sm text-muted-foreground ml-4">
-              {(pagination.currentPage - 1) * pagination.pageSize + 1}-
+              {(pagination.currentPage - 1) * pagination.pageSize + 1}–
               {Math.min(pagination.currentPage * pagination.pageSize, pagination.totalItems)} of {pagination.totalItems}
             </span>
           </div>
