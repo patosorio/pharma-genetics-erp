@@ -13,6 +13,7 @@ import {
   Users,
   Receipt,
   Settings,
+  DollarSign,
 } from "lucide-react"
 import { cn } from "@/lib/utils"
 
@@ -45,6 +46,7 @@ const navItems = [
       { href: "/cultivation/mothers", label: "Mother Plants" },
       { href: "/cultivation/batches", label: "Production Batches" },
       { href: "/cultivation/clones", label: "Clones" },
+      { href: "/cultivation/assumptions", label: "Assumptions" },
     ],
   },
   {
@@ -54,6 +56,9 @@ const navItems = [
     children: [
       { href: "/inventory/items", label: "Items" },
       { href: "/inventory/movements", label: "Movements" },
+      { href: "/inventory/alerts", label: "Alerts" },
+      { href: "/inventory/adjustments", label: "Adjustments" },
+      { href: "/inventory/reports", label: "Reports" },
     ],
   },
   {
@@ -63,12 +68,53 @@ const navItems = [
     children: [
       { href: "/sales/customers", label: "Customers" },
       { href: "/sales/orders", label: "Orders" },
+      { href: "/sales/deliveries", label: "Deliveries" },
       { href: "/sales/invoices", label: "Invoices" },
+      { href: "/sales/price-lists", label: "Price Lists" },
     ],
   },
-  { href: "/purchasing", label: "Purchasing", icon: ShoppingBag },
-  { href: "/hr", label: "HR", icon: Users },
-  { href: "/taxes", label: "Taxes", icon: Receipt },
+  {
+    href: "/purchasing",
+    label: "Purchasing",
+    icon: ShoppingBag,
+    children: [
+      { href: "/purchasing/suppliers", label: "Suppliers" },
+      { href: "/purchasing/orders", label: "Purchase Orders" },
+      { href: "/purchasing/expenses", label: "Expenses" },
+      { href: "/purchasing/invoices", label: "Invoices" },
+      { href: "/purchasing/expense-categories", label: "Categories" },
+    ],
+  },
+  {
+    href: "/hr",
+    label: "HR",
+    icon: Users,
+    children: [
+      { href: "/hr/employees", label: "Employees" },
+      { href: "/hr/departments", label: "Departments" },
+      { href: "/hr/payroll-periods", label: "Payroll Periods" },
+      { href: "/hr/payrolls", label: "Payrolls" },
+    ],
+  },
+  {
+    href: "/taxes",
+    label: "Taxes",
+    icon: Receipt,
+    children: [
+      { href: "/taxes/reports", label: "Tax Reports" },
+      { href: "/taxes/journal-entries", label: "Journal Entries" },
+    ],
+  },
+  {
+    href: "/pricing",
+    label: "Pricing",
+    icon: DollarSign,
+    children: [
+      { href: "/pricing/tiers", label: "Pricing Tiers" },
+      { href: "/pricing/cost-rules", label: "Cost Rules" },
+      { href: "/pricing/snapshots", label: "Cost Snapshots" },
+    ],
+  },
   { href: "/settings", label: "Settings", icon: Settings },
 ]
 

@@ -4,10 +4,34 @@ User, Location, Contact, Currency, TaxType, CompanySettings
 """
 
 from rest_framework import viewsets, filters, status
+from rest_framework.mixins import RetrieveModelMixin, UpdateModelMixin
+from rest_framework.viewsets import GenericViewSet
 from rest_framework.views import APIView
 from rest_framework.response import Response
-from rest_framework.permissions import IsAuthenticated
+from rest_framework.permissions import IsAuthenticated, BasePermission
 from django_filters.rest_framework import DjangoFilterBackend
+
+
+class IsAdminRole(BasePermission):
+    """Allow full access only to users whose role == 'admin'."""
+    def has_permission(self, request, view):
+        return bool(
+            request.user
+            and request.user.is_authenticated
+            and request.user.role == 'admin'
+        )
+
+
+class AuditViewSetMixin:
+    """
+    Mixin that automatically sets created_by and updated_by on every save.
+    Apply to any ModelViewSet whose model inherits AuditMixin.
+    """
+    def perform_create(self, serializer):
+        serializer.save(created_by=self.request.user, updated_by=self.request.user)
+
+    def perform_update(self, serializer):
+        serializer.save(updated_by=self.request.user)
 
 from .models import User, Location, Contact, Currency, TaxType, CompanySettings
 from .serializers import (
@@ -66,13 +90,13 @@ class RegisterView(APIView):
         return Response(serializer.errors, status=status.HTTP_400_BAD_REQUEST)
 
 
-class UserViewSet(viewsets.ModelViewSet):
+class UserViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     """
-    ViewSet for User model
-    Provides CRUD operations for user management
+    ViewSet for User model — admin role only.
     """
     queryset = User.objects.select_related('location').all()
     serializer_class = UserSerializer
+    permission_classes = [IsAdminRole]
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
     filterset_fields = ['role', 'is_active', 'location']
     search_fields = ['username', 'email', 'first_name', 'last_name']
@@ -80,11 +104,7 @@ class UserViewSet(viewsets.ModelViewSet):
     ordering = ['-date_joined']
 
 
-class LocationViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Location model
-    Manages physical locations/facilities
-    """
+class LocationViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     queryset = Location.objects.all()
     serializer_class = LocationSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -94,11 +114,7 @@ class LocationViewSet(viewsets.ModelViewSet):
     ordering = ['code']
 
 
-class ContactViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Contact model
-    Unified contacts for customers, suppliers, vendors
-    """
+class ContactViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     queryset = Contact.objects.all()
     serializer_class = ContactSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -108,10 +124,7 @@ class ContactViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
 
-class CurrencyViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for Currency model
-    """
+class CurrencyViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     queryset = Currency.objects.all()
     serializer_class = CurrencySerializer
     filter_backends = [filters.SearchFilter, filters.OrderingFilter]
@@ -120,10 +133,7 @@ class CurrencyViewSet(viewsets.ModelViewSet):
     ordering = ['code']
 
 
-class TaxTypeViewSet(viewsets.ModelViewSet):
-    """
-    ViewSet for TaxType model
-    """
+class TaxTypeViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     queryset = TaxType.objects.all()
     serializer_class = TaxTypeSerializer
     filter_backends = [DjangoFilterBackend, filters.SearchFilter, filters.OrderingFilter]
@@ -133,10 +143,18 @@ class TaxTypeViewSet(viewsets.ModelViewSet):
     ordering = ['name']
 
 
-class CompanySettingsViewSet(viewsets.ReadOnlyModelViewSet):
+class CompanySettingsViewSet(RetrieveModelMixin, UpdateModelMixin, GenericViewSet):
     """
-    ViewSet for CompanySettings (singleton)
-    Read-only - use admin interface for updates
+    ViewSet for CompanySettings (singleton) — retrieve and partial update.
+    Auto-creates the singleton record on first access if it doesn't exist.
     """
     queryset = CompanySettings.objects.all()
     serializer_class = CompanySettingsSerializer
+    http_method_names = ['get', 'patch', 'head', 'options']
+
+    def get_object(self):
+        obj, _ = CompanySettings.objects.get_or_create(
+            pk=1,
+            defaults={'default_currency': Currency.objects.first()},
+        )
+        return obj

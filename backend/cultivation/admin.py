@@ -7,20 +7,31 @@ class MotherPlantAdmin(admin.ModelAdmin):
     list_display = ['code', 'strain', 'location', 'status', 'cultivation_date', 'health_grade', 'total_cuttings_taken']
     list_filter = ['health_grade', 'location', 'status']
     search_fields = ['code', 'strain__name']
-    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
-    
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by', 'last_cut_date', 'total_cuttings_taken']
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('code', 'strain', 'location')
         }),
         ('Lifecycle', {
-            'fields': ('cultivation_date', 'expected_end_date', 'health_status', 'is_active')
+            'fields': ('cultivation_date', 'expected_retirement_date', 'health_grade', 'status')
+        }),
+        ('Production Capacity', {
+            'fields': (
+                'clones_per_cycle_min', 'clones_per_cycle_avg', 'clones_per_cycle_max',
+                'total_cycles_year',
+                'min_possible_clones_year', 'avg_clones_year', 'max_possible_clones_year',
+            )
         }),
         ('Production Stats', {
-            'fields': ('total_cuttings_taken',)
+            'fields': ('total_cuttings_taken', 'last_cut_date')
         }),
         ('Notes', {
             'fields': ('notes',)
+        }),
+        ('Audit Trail', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
         }),
     )
 

@@ -31,7 +31,40 @@ export function useCreateOrder() {
 export function useUpdateOrder() {
   const queryClient = useQueryClient()
   return useMutation({
-    mutationFn: ({ id, data }: { id: number; data: Partial<Order> }) => apiClient.patch<Order>(`/orders/${id}/`, data),
+    mutationFn: ({ id, data }: { id: number; data: Partial<Order> }) =>
+      apiClient.patch<Order>(`/orders/${id}/`, data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
+  })
+}
+
+export function useConfirmOrder() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiClient.post<Order>(`/orders/${id}/confirm/`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
+  })
+}
+
+export function useMarkOrderInProduction() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiClient.post<Order>(`/orders/${id}/mark_in_production/`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
+  })
+}
+
+export function useMarkOrderReady() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiClient.post<Order>(`/orders/${id}/mark_ready/`, {}),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
+  })
+}
+
+export function useCancelOrder() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (id: number) => apiClient.post<Order>(`/orders/${id}/cancel/`, {}),
     onSuccess: () => queryClient.invalidateQueries({ queryKey: ["orders"] }),
   })
 }

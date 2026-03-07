@@ -1,6 +1,6 @@
 'use client';
 
-import { useAuth } from '@/lib/auth-context';
+import { useAuth } from '@/components/providers/auth-provider';
 import {
   DropdownMenu,
   DropdownMenuContent,

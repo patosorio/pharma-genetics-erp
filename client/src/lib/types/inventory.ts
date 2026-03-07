@@ -22,19 +22,78 @@ export interface InventoryItem {
 }
 
 export interface StockMovement {
-  id: string
-  item: string
-  item_name: string
-  movement_type: "in" | "out" | "adjustment" | "transfer"
+  id: number
+  clone: number
+  clone_code: string
+  movement_type: "sale" | "transfer" | "adjustment" | "batch_complete" | "reservation" | "reservation_release"
   movement_type_display: string
-  quantity: number
-  from_location: string | null
-  from_location_name: string | null
-  to_location: string | null
-  to_location_name: string | null
-  reference: string | null
+  from_location: number | null
+  from_location_code: string | null
+  to_location: number | null
+  to_location_code: string | null
+  movement_date: string
+  reference_type: string | null
+  reference_id: number | null
   notes: string | null
-  created_by: string
-  created_by_name: string
+  performed_by: number | null
+  performed_by_name: string | null
   created_at: string
+}
+
+export interface InventoryAlert {
+  id: number
+  strain: number
+  strain_name: string
+  location: number
+  location_code: string
+  reorder_point: number
+  alert_email: string | null
+  is_active: boolean
+  current_stock: number
+  is_low_stock: boolean
+  stock_deficit: number
+  created_at: string
+  updated_at: string
+}
+
+export interface InventoryAdjustment {
+  id: number
+  clone: number
+  clone_code: string
+  adjustment_date: string
+  reason: string
+  notes: string
+  approved_by: number | null
+  approved_by_name: string | null
+  photo_url: string | null
+  created_at: string
+  updated_at: string
+}
+
+export interface InventorySummaryByStrain {
+  strain_id: number
+  strain_name: string
+  total_clones: number
+  rooted_clones: number
+  reserved_clones: number
+  available_clones: number
+}
+
+export interface InventorySummaryByLocation {
+  location_id: number
+  location_code: string
+  total_clones: number
+  rooted_clones: number
+  reserved_clones: number
+  available_clones: number
+}
+
+export interface InventoryAgingReport {
+  clone_id: number
+  clone_code: string
+  strain_name: string
+  location_code: string
+  status: string
+  age_in_days: number
+  unit_cost: string
 }

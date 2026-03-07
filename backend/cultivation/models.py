@@ -29,7 +29,7 @@ class MotherPlant(AuditMixin):
             ('Under_Treatment', 'Under Treatment'),
             ('Growing', 'Growing'),
         ],
-        default='active'
+        default='Growing'
     )
     health_grade = models.CharField(
         max_length=50,
@@ -115,8 +115,7 @@ class MotherPlant(AuditMixin):
         help_text="Auto-updated from latest ProductionBatch"
     )
     total_cuttings_taken = models.IntegerField(
-        null=False,
-        blank=False,
+        default=0,
         help_text="Lifetime total cuttings"
     )
 
@@ -253,17 +252,23 @@ class ProductionBatch(AuditMixin):
     
     def complete_batch(self):
         """
-        Mark batch as completed and calculate costs
-        Call this when rooting phase is done
+        Mark batch as completed and calculate costs.
+        Call this when rooting phase is done.
         """
+        from django.core.exceptions import ValidationError
+        if self.status == 'completed':
+            raise ValidationError(
+                f"Batch '{self.batch_number}' is already completed."
+            )
+
         rooted_count = self.rooted_clone_count
-        
+
         if rooted_count > 0:
             self.cost_per_clone = self.total_batch_cost / rooted_count
-        
+
         self.status = 'completed'
         self.save()
-        
+
         # Update unit_cost for all rooted clones
         self.clones.filter(
             status__in=['rooted', 'reserved']

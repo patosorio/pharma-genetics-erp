@@ -2,49 +2,46 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { Badge } from "@/components/ui/badge"
 
 interface StrainData {
-  id: string
+  id: number
   name: string
   category: string
-  activeBatches: number
-  totalYield: string
+  activeClones: number
 }
 
-const mockStrains: StrainData[] = [
-  { id: "1", name: "OG Kush", category: "Indica Dominant", activeBatches: 5, totalYield: "45.2 kg" },
-  { id: "2", name: "Blue Dream", category: "Hybrid", activeBatches: 4, totalYield: "38.7 kg" },
-  { id: "3", name: "Sour Diesel", category: "Sativa", activeBatches: 3, totalYield: "32.1 kg" },
-  { id: "4", name: "Girl Scout Cookies", category: "Hybrid", activeBatches: 3, totalYield: "28.9 kg" },
-  { id: "5", name: "White Widow", category: "Hybrid", activeBatches: 2, totalYield: "24.5 kg" },
-]
+interface TopStrainsProps {
+  strains?: StrainData[]
+}
 
-export function TopStrains() {
+export function TopStrains({ strains = [] }: TopStrainsProps) {
   return (
     <Card className="thin-border">
       <CardHeader>
-        <CardTitle className="text-lg">Top Performing Strains</CardTitle>
+        <CardTitle className="text-lg">Inventory by Strain</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className="space-y-3">
-          {mockStrains.map((strain) => (
-            <div
-              key={strain.id}
-              className="flex items-center justify-between py-3 border-b border-border last:border-0"
-            >
-              <div className="flex-1">
-                <p className="font-medium mb-1">{strain.name}</p>
-                <Badge variant="outline" className="text-xs thin-border">
-                  {strain.category}
-                </Badge>
+        {strains.length === 0 ? (
+          <p className="text-sm text-muted-foreground text-center py-8">No inventory data available</p>
+        ) : (
+          <div className="space-y-3">
+            {strains.map((strain) => (
+              <div
+                key={strain.id}
+                className="flex items-center justify-between py-3 border-b border-border last:border-0"
+              >
+                <div className="flex-1">
+                  <p className="font-medium mb-1">{strain.name}</p>
+                  <Badge variant="outline" className="text-xs thin-border">
+                    {strain.category}
+                  </Badge>
+                </div>
+                <div className="text-right">
+                  <p className="text-sm font-medium data-value">{strain.activeClones}</p>
+                  <p className="text-xs text-muted-foreground">rooted clones</p>
+                </div>
               </div>
-              <div className="text-right">
-                <p className="text-sm font-medium data-value">{strain.totalYield}</p>
-                <p className="text-xs text-muted-foreground">
-                  {strain.activeBatches} active {strain.activeBatches === 1 ? "batch" : "batches"}
-                </p>
-              </div>
-            </div>
-          ))}
-        </div>
+            ))}
+          </div>
+        )}
       </CardContent>
     </Card>
   )

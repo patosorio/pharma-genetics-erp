@@ -3,14 +3,23 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card"
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
-const data = [
-  { status: "Cutting", count: 5 },
-  { status: "Rooting", count: 12 },
-  { status: "Completed", count: 18 },
-  { status: "Failed", count: 3 },
+interface BatchStatusData {
+  status: string
+  count: number
+}
+
+interface BatchStatusChartProps {
+  data?: BatchStatusData[]
+}
+
+const defaultData: BatchStatusData[] = [
+  { status: "Cutting", count: 0 },
+  { status: "Rooting", count: 0 },
+  { status: "Completed", count: 0 },
+  { status: "Failed", count: 0 },
 ]
 
-export function BatchStatusChart() {
+export function BatchStatusChart({ data = defaultData }: BatchStatusChartProps) {
   return (
     <Card className="thin-border">
       <CardHeader>

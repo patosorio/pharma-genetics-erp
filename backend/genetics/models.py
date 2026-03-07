@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils.text import slugify
 from core.models import AuditMixin
 from django.core.validators import MinValueValidator, MaxValueValidator
 
@@ -34,9 +35,9 @@ class Strain(AuditMixin):
     )
     slug = models.SlugField(
         max_length=255,
-        null=False,
-        blank=False,
-        unique=True
+        unique=True,
+        blank=True,
+        help_text='URL-friendly identifier (auto-generated from name if blank)'
     )
     catalogue_year = models.IntegerField(
         null=False,
@@ -52,14 +53,16 @@ class Strain(AuditMixin):
         decimal_places=2,
         null=True,
         blank=True,
-        help_text='The THC percentage of the strain'
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='The THC percentage of the strain (0–100)'
     )
     cbd_percentage = models.DecimalField(
         max_digits=5,
         decimal_places=2,
         null=True,
         blank=True,
-        help_text='The CBD percentage of the strain'
+        validators=[MinValueValidator(0), MaxValueValidator(100)],
+        help_text='The CBD percentage of the strain (0–100)'
     )
     terpene_profile = models.CharField(
         max_length=255,
@@ -82,6 +85,17 @@ class Strain(AuditMixin):
             models.Index(fields=['category']),
             models.Index(fields=['is_active']),
         ]
+
+    def save(self, *args, **kwargs):
+        if not self.slug:
+            base = slugify(self.name)
+            slug = base
+            n = 1
+            while Strain.objects.filter(slug=slug).exclude(pk=self.pk).exists():
+                slug = f"{base}-{n}"
+                n += 1
+            self.slug = slug
+        super().save(*args, **kwargs)
 
     def __str__(self):
         return f"{self.name} ({self.category})"

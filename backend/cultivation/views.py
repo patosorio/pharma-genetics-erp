@@ -7,6 +7,7 @@ from rest_framework import viewsets, filters, status
 from rest_framework.decorators import action
 from rest_framework.response import Response
 from django_filters.rest_framework import DjangoFilterBackend
+from core.views import AuditViewSetMixin
 
 from .models import MotherPlant, ProductionBatch, Clone, ProductionAssumption
 from .serializers import (
@@ -16,7 +17,7 @@ from .serializers import (
 )
 
 
-class MotherPlantViewSet(viewsets.ModelViewSet):
+class MotherPlantViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for MotherPlant model
     Mother plants used for clone production
@@ -35,7 +36,7 @@ class MotherPlantViewSet(viewsets.ModelViewSet):
         return MotherPlantSerializer
 
 
-class ProductionBatchViewSet(viewsets.ModelViewSet):
+class ProductionBatchViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for ProductionBatch model
     Production batches from mother plants
@@ -66,7 +67,7 @@ class ProductionBatchViewSet(viewsets.ModelViewSet):
             )
 
 
-class CloneViewSet(viewsets.ModelViewSet):
+class CloneViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for Clone model
     Individual clone plants with comprehensive filtering
@@ -112,7 +113,7 @@ class CloneViewSet(viewsets.ModelViewSet):
         return Response(serializer.data)
 
 
-class ProductionAssumptionViewSet(viewsets.ModelViewSet):
+class ProductionAssumptionViewSet(AuditViewSetMixin, viewsets.ModelViewSet):
     """
     ViewSet for ProductionAssumption model
     Production capacity assumptions and planning

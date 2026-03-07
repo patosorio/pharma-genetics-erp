@@ -49,11 +49,30 @@ class CurrencySerializer(serializers.ModelSerializer):
         model = Currency
         fields = '__all__'
 
+    def validate(self, data):
+        is_default = data.get('is_default', getattr(self.instance, 'is_default', False))
+        if is_default:
+            qs = Currency.objects.filter(is_default=True)
+            if self.instance:
+                qs = qs.exclude(pk=self.instance.pk)
+            if qs.exists():
+                existing = qs.first()
+                raise serializers.ValidationError(
+                    f"'{existing.code}' is already the default currency. "
+                    "Setting this currency as default will clear the existing one."
+                )
+        return data
+
 
 class TaxTypeSerializer(serializers.ModelSerializer):
     class Meta:
         model = TaxType
         fields = '__all__'
+
+    def validate_rate(self, value):
+        if value <= 0:
+            raise serializers.ValidationError("Tax rate must be greater than zero.")
+        return value
 
 
 class CompanySettingsSerializer(serializers.ModelSerializer):

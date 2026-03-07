@@ -38,9 +38,24 @@ class InventoryAdjustmentSerializer(serializers.ModelSerializer):
     location_code = serializers.ReadOnlyField()
     reason_display = serializers.CharField(source='get_reason_display', read_only=True)
     approved_by_name = serializers.CharField(source='approved_by.get_full_name', read_only=True)
-    
+
     class Meta:
         model = InventoryAdjustment
         fields = '__all__'
         read_only_fields = ['id', 'clone_code', 'strain_name', 'location_code', 'created_at', 'updated_at', 'created_by', 'updated_by']
+
+    def validate_notes(self, value):
+        if not value or len(value.strip()) < 10:
+            raise serializers.ValidationError(
+                "Detailed notes are required for inventory adjustments (minimum 10 characters)."
+            )
+        return value
+
+    def validate_clone(self, value):
+        if value.status not in ('rooted', 'reserved'):
+            raise serializers.ValidationError(
+                f"Clone must be in 'rooted' or 'reserved' status to be adjusted "
+                f"(current status: '{value.status}')."
+            )
+        return value
 

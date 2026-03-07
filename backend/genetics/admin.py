@@ -28,10 +28,10 @@ class StrainAdmin(admin.ModelAdmin):
     ]
     search_fields = [
         'name',
-        'category',
-        'catalogue_year',
+        'category__name',
         'breeder',
-        'lineage'
+        'lineage',
+        'terpene_profile',
     ]
     readonly_fields = [
         'created_at',

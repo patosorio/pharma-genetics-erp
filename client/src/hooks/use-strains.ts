@@ -43,3 +43,11 @@ export function useStrainCategories(params: ListParams = {}) {
     queryFn: () => apiClient.get<PaginatedResponse<StrainCategory>>("/strain-categories/", params),
   })
 }
+
+export function useCreateStrainCategory() {
+  const queryClient = useQueryClient()
+  return useMutation({
+    mutationFn: (data: Partial<StrainCategory>) => apiClient.post<StrainCategory>("/strain-categories/", data),
+    onSuccess: () => queryClient.invalidateQueries({ queryKey: ["strain-categories"] }),
+  })
+}

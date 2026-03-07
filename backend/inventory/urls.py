@@ -6,7 +6,8 @@ from django.urls import path, include
 from rest_framework.routers import DefaultRouter
 
 from .views import (
-    InventoryAlertViewSet, StockMovementViewSet, InventoryAdjustmentViewSet
+    InventoryAlertViewSet, StockMovementViewSet, InventoryAdjustmentViewSet,
+    InventorySummaryView, ReserveClonesView,
 )
 
 router = DefaultRouter()
@@ -16,5 +17,7 @@ router.register(r'inventory-adjustments', InventoryAdjustmentViewSet, basename='
 
 urlpatterns = [
     path('', include(router.urls)),
+    path('inventory/summary/<str:report_type>/', InventorySummaryView.as_view(), name='inventory-summary'),
+    path('inventory/reserve_clones/', ReserveClonesView.as_view(), name='inventory-reserve-clones'),
 ]
 
