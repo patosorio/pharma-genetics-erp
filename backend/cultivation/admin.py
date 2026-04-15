@@ -1,28 +1,99 @@
 # apps/cultivation/admin.py
 from django.contrib import admin
+from import_export import resources, fields
+from import_export.admin import ImportExportModelAdmin
+from import_export.widgets import ForeignKeyWidget
 from .models import MotherPlant, ProductionBatch, Clone
+from core.models import Location
+from genetics.models import Strain
+
+
+class MotherPlantResource(resources.ModelResource):
+    strain = fields.Field(
+        column_name='strain',
+        attribute='strain',
+        widget=ForeignKeyWidget(Strain, field='name'),
+    )
+    location = fields.Field(
+        column_name='location',
+        attribute='location',
+        widget=ForeignKeyWidget(Location, field='code'),
+    )
+
+    class Meta:
+        model = MotherPlant
+        fields = (
+            'id', 'code', 'strain', 'location', 'status', 'health_grade',
+            'cultivation_date', 'expected_ready_date', 'actual_ready_date',
+            'expected_retirement_date', 'actual_retirement_date',
+            'clones_per_cycle_min', 'clones_per_cycle_avg', 'clones_per_cycle_max',
+            'total_cycles_year', 'min_possible_clones_year', 'avg_clones_year',
+            'max_possible_clones_year', 'notes',
+        )
+        export_order = fields
+        import_id_fields = ['code']
+
+
+def _make_status_action(status_value, status_label):
+    """Factory that creates a bulk status-change admin action."""
+    def action_fn(modeladmin, request, queryset):
+        updated = queryset.update(status=status_value)
+        modeladmin.message_user(request, f"Set {updated} plant(s) to '{status_label}'.")
+    action_fn.__name__ = f'set_status_{status_value.lower()}'
+    action_fn.short_description = f'Set status → {status_label}'
+    return action_fn
+
 
 @admin.register(MotherPlant)
-class MotherPlantAdmin(admin.ModelAdmin):
+class MotherPlantAdmin(ImportExportModelAdmin):
+    resource_classes = [MotherPlantResource]
     list_display = ['code', 'strain', 'location', 'status', 'cultivation_date', 'health_grade', 'total_cuttings_taken']
     list_filter = ['health_grade', 'location', 'status']
     search_fields = ['code', 'strain__name']
-    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
-    
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by', 'last_cut_date', 'total_cuttings_taken']
+    actions = [
+        'set_status_growing',
+        'set_status_active_production',
+        'set_status_recovery',
+        'set_status_low_production',
+        'set_status_quarantine',
+        'set_status_retired',
+        'set_status_under_treatment',
+    ]
+
     fieldsets = (
         ('Basic Information', {
             'fields': ('code', 'strain', 'location')
         }),
         ('Lifecycle', {
-            'fields': ('cultivation_date', 'expected_end_date', 'health_status', 'is_active')
+            'fields': ('cultivation_date', 'expected_retirement_date', 'health_grade', 'status')
+        }),
+        ('Production Capacity', {
+            'fields': (
+                'clones_per_cycle_min', 'clones_per_cycle_avg', 'clones_per_cycle_max',
+                'total_cycles_year',
+                'min_possible_clones_year', 'avg_clones_year', 'max_possible_clones_year',
+            )
         }),
         ('Production Stats', {
-            'fields': ('total_cuttings_taken',)
+            'fields': ('total_cuttings_taken', 'last_cut_date')
         }),
         ('Notes', {
             'fields': ('notes',)
         }),
+        ('Audit Trail', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
     )
+
+    set_status_growing = _make_status_action('Growing', 'Growing')
+    set_status_active_production = _make_status_action('Active_Production', 'Active Production')
+    set_status_recovery = _make_status_action('Recovery', 'Recovery')
+    set_status_low_production = _make_status_action('Low_Production', 'Low Production')
+    set_status_quarantine = _make_status_action('Quarantine', 'Quarantine')
+    set_status_retired = _make_status_action('Retired', 'Retired')
+    set_status_under_treatment = _make_status_action('Under_Treatment', 'Under Treatment')
 
 @admin.register(ProductionBatch)
 class ProductionBatchAdmin(admin.ModelAdmin):

@@ -1,6 +1,28 @@
 from django.db import models
+from django.utils import timezone
 from core.models import AuditMixin, Contact, Location, Currency, TaxType
 from genetics.models import Strain
+
+
+def _generate_number(prefix, model_class, field_name):
+    """Return the next sequential document number in the format PREFIX-YYYY-NNN."""
+    year = timezone.now().year
+    pattern = f"{prefix}-{year}-"
+    last = (
+        model_class.objects
+        .filter(**{f"{field_name}__startswith": pattern})
+        .order_by(field_name)
+        .values_list(field_name, flat=True)
+        .last()
+    )
+    if last:
+        try:
+            seq = int(last.split('-')[-1]) + 1
+        except (ValueError, IndexError):
+            seq = 1
+    else:
+        seq = 1
+    return f"{pattern}{seq:03d}"
 
 
 class Customer(AuditMixin):
@@ -18,7 +40,8 @@ class Customer(AuditMixin):
     customer_code = models.CharField(
         max_length=50,
         unique=True,
-        help_text='Unique customer identifier'
+        blank=True,
+        help_text='Unique customer identifier (auto-generated if blank)'
     )
     tier = models.CharField(
         max_length=50,
@@ -49,6 +72,11 @@ class Customer(AuditMixin):
             models.Index(fields=['tier']),
         ]
     
+    def save(self, *args, **kwargs):
+        if not self.customer_code:
+            self.customer_code = _generate_number('CUST', Customer, 'customer_code')
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.customer_code} - {self.contact.name}"
 
@@ -111,7 +139,8 @@ class Order(AuditMixin):
     order_number = models.CharField(
         max_length=50,
         unique=True,
-        help_text='Unique order identifier'
+        blank=True,
+        help_text='Unique order identifier (auto-generated if blank)'
     )
     customer = models.ForeignKey(
         Customer,
@@ -133,6 +162,7 @@ class Order(AuditMixin):
             ('confirmed', 'Confirmed'),
             ('in_production', 'In Production'),
             ('ready', 'Ready for Delivery'),
+            ('partially_delivered', 'Partially Delivered'),
             ('delivered', 'Delivered'),
             ('cancelled', 'Cancelled'),
         ],
@@ -156,6 +186,11 @@ class Order(AuditMixin):
             models.Index(fields=['expected_delivery_date']),
         ]
     
+    def save(self, *args, **kwargs):
+        if not self.order_number:
+            self.order_number = _generate_number('ORD', Order, 'order_number')
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.order_number} - {self.customer.contact.name}"
 
@@ -211,7 +246,8 @@ class DeliveryNote(AuditMixin):
     delivery_note_number = models.CharField(
         max_length=50,
         unique=True,
-        help_text='Unique delivery note identifier'
+        blank=True,
+        help_text='Unique delivery note identifier (auto-generated if blank)'
     )
     order = models.ForeignKey(
         Order,
@@ -264,6 +300,11 @@ class DeliveryNote(AuditMixin):
             models.Index(fields=['status']),
         ]
     
+    def save(self, *args, **kwargs):
+        if not self.delivery_note_number:
+            self.delivery_note_number = _generate_number('DN', DeliveryNote, 'delivery_note_number')
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.delivery_note_number} - {self.order.order_number}"
 
@@ -310,7 +351,8 @@ class SalesInvoice(AuditMixin):
     invoice_number = models.CharField(
         max_length=50,
         unique=True,
-        help_text='Unique invoice identifier'
+        blank=True,
+        help_text='Unique invoice identifier (auto-generated if blank)'
     )
     order = models.ForeignKey(
         Order,
@@ -391,6 +433,18 @@ class SalesInvoice(AuditMixin):
     def __str__(self):
         return f"{self.invoice_number} - {self.order.customer.contact.name}"
     
+    def save(self, *args, **kwargs):
+        if not self.invoice_number:
+            self.invoice_number = _generate_number('INV', SalesInvoice, 'invoice_number')
+        if self.tax_type_id:
+            from decimal import Decimal
+            rate = Decimal(str(self.tax_type.rate)) / Decimal('100')
+            self.tax_amount = (self.base_amount * rate).quantize(Decimal('0.01'))
+        else:
+            self.tax_amount = 0
+        self.total_amount = self.base_amount + self.tax_amount
+        super().save(*args, **kwargs)
+
     @property
     def balance_due(self):
         """Calculate remaining balance"""
@@ -404,7 +458,8 @@ class Payment(AuditMixin):
     payment_number = models.CharField(
         max_length=50,
         unique=True,
-        help_text='Unique payment identifier'
+        blank=True,
+        help_text='Unique payment identifier (auto-generated if blank)'
     )
     invoice = models.ForeignKey(
         SalesInvoice,
@@ -443,5 +498,10 @@ class Payment(AuditMixin):
             models.Index(fields=['payment_date']),
         ]
     
+    def save(self, *args, **kwargs):
+        if not self.payment_number:
+            self.payment_number = _generate_number('PAY', Payment, 'payment_number')
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.payment_number} - {self.invoice.order.customer.contact.name}: {self.amount}"

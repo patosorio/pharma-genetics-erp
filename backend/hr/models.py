@@ -1,4 +1,5 @@
 from django.db import models
+from django.utils import timezone
 from django.core.validators import MinValueValidator
 from django.conf import settings
 from core.models import AuditMixin, Location
@@ -49,7 +50,8 @@ class Employee(AuditMixin):
     employee_code = models.CharField(
         max_length=50,
         unique=True,
-        help_text='Unique employee code'
+        blank=True,
+        help_text='Unique employee code (auto-generated as EMP-YYYY-NNN if blank)'
     )
     user = models.OneToOneField(
         settings.AUTH_USER_MODEL,
@@ -68,6 +70,7 @@ class Employee(AuditMixin):
         help_text='Employee last name'
     )
     email = models.EmailField(
+        unique=True,
         help_text='Employee email address'
     )
     phone = models.CharField(
@@ -118,9 +121,24 @@ class Employee(AuditMixin):
             ),
         ]
     
+    def save(self, *args, **kwargs):
+        if not self.employee_code:
+            year = timezone.now().year
+            pattern = f"EMP-{year}-"
+            last = (
+                Employee.objects
+                .filter(employee_code__startswith=pattern)
+                .order_by('employee_code')
+                .values_list('employee_code', flat=True)
+                .last()
+            )
+            seq = (int(last.split('-')[-1]) + 1) if last else 1
+            self.employee_code = f"{pattern}{seq:03d}"
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.employee_code} - {self.first_name} {self.last_name}"
-    
+
     @property
     def full_name(self):
         """Get employee full name"""
@@ -171,9 +189,6 @@ class PayrollPeriod(models.Model):
         return self.period_name
     
     def save(self, *args, **kwargs):
-        """Override save to validate dates"""
-        if self.end_date < self.start_date:
-            raise ValueError("end_date must be after or equal to start_date")
         super().save(*args, **kwargs)
 
 

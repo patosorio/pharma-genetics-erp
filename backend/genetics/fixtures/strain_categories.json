@@ -1,0 +1,59 @@
+[
+  {
+    "model": "genetics.straincategory",
+    "pk": 1,
+    "fields": {
+      "name": "50/50 Hybrid",
+      "description": "Balanced hybrid with equal indica and sativa characteristics"
+    }
+  },
+  {
+    "model": "genetics.straincategory",
+    "pk": 2,
+    "fields": {
+      "name": "70/30 Indica",
+      "description": "Indica-dominant hybrid with 70% indica and 30% sativa"
+    }
+  },
+  {
+    "model": "genetics.straincategory",
+    "pk": 3,
+    "fields": {
+      "name": "70/30 Sativa",
+      "description": "Sativa-dominant hybrid with 70% sativa and 30% indica"
+    }
+  },
+  {
+    "model": "genetics.straincategory",
+    "pk": 4,
+    "fields": {
+      "name": "30/70 Indica",
+      "description": "Heavily indica-dominant strain with 30% sativa and 70% indica"
+    }
+  },
+  {
+    "model": "genetics.straincategory",
+    "pk": 5,
+    "fields": {
+      "name": "30/70 Sativa",
+      "description": "Heavily sativa-dominant strain with 30% indica and 70% sativa"
+    }
+  },
+  {
+    "model": "genetics.straincategory",
+    "pk": 6,
+    "fields": {
+      "name": "100% Indica",
+      "description": "Pure indica landrace strain"
+    }
+  },
+  {
+    "model": "genetics.straincategory",
+    "pk": 7,
+    "fields": {
+      "name": "100% Sativa",
+      "description": "Pure sativa landrace strain"
+    }
+  }
+]
+

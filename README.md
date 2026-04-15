@@ -217,5 +217,137 @@ Next.js Frontend (ERP UI) ─────► Django REST API ─────► 
 
 ## Getting Started
 
-TODO: SETUP!
-TODO: Dashboard: move to a new repository.
+### Prerequisites
+
+- Python 3.11+
+- Node.js 18+ and npm
+- Git
+
+---
+
+### 1. Clone the Repository
+
+```bash
+git clone https://github.com/your-org/pharma-genetics-erp.git
+cd pharma-genetics-erp
+```
+
+---
+
+### 2. Backend Setup (Django)
+
+#### Create and activate a virtual environment
+
+```bash
+python -m venv env
+source env/bin/activate        # macOS / Linux
+# env\Scripts\activate         # Windows
+```
+
+#### Install Python dependencies
+
+```bash
+pip install -r requirements.txt
+```
+
+#### Configure environment variables
+
+Create a `.env` file inside the `backend/` directory:
+
+```bash
+cp backend/.env.example backend/.env   # if the example file exists, otherwise create it manually
+```
+
+Minimum required variables:
+
+```env
+DJANGO_SECRET_KEY=your-secret-key-here
+DJANGO_DEBUG=True
+ALLOWED_HOSTS=localhost,127.0.0.1
+```
+
+For PostgreSQL (production), add:
+
+```env
+DB_ENGINE=django.db.backends.postgresql
+DB_NAME=pharma_erp
+DB_USER=your_db_user
+DB_PASSWORD=your_db_password
+DB_HOST=localhost
+DB_PORT=5432
+```
+
+> In development the project defaults to SQLite — no extra DB config needed.
+
+#### Apply migrations and create a superuser
+
+```bash
+cd backend
+python manage.py migrate
+python manage.py createsuperuser
+```
+
+#### Run the development server
+
+```bash
+python manage.py runserver
+```
+
+The Django API and admin panel will be available at `http://localhost:8000`.  
+Admin panel: `http://localhost:8000/admin/`
+
+---
+
+### 3. Frontend Setup (Next.js)
+
+```bash
+cd client
+npm install
+npm run dev
+```
+
+The Next.js app will be available at `http://localhost:3000`.
+
+#### Frontend environment variables
+
+Create a `client/.env.local` file if you need to override the API base URL or Firebase config:
+
+```env
+NEXT_PUBLIC_API_URL=http://localhost:8000/api
+NEXT_PUBLIC_FIREBASE_API_KEY=your-firebase-api-key
+NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN=your-project.firebaseapp.com
+NEXT_PUBLIC_FIREBASE_PROJECT_ID=your-project-id
+```
+
+---
+
+### 4. Running Both Services Together
+
+Open two terminal tabs and run each service independently:
+
+| Terminal | Command | URL |
+|----------|---------|-----|
+| 1 | `cd backend && python manage.py runserver` | `http://localhost:8000` |
+| 2 | `cd client && npm run dev` | `http://localhost:3000` |
+
+---
+
+### 5. Useful Django Commands
+
+```bash
+# Create new migrations after model changes
+python manage.py makemigrations
+
+# Open Django shell
+python manage.py shell
+
+# Load fixture data (if any)
+python manage.py loaddata fixtures/initial_data.json
+
+# Run tests
+python manage.py test
+```
+
+---
+
+> **Note:** The Plotly Dash BI Dashboard and ETL pipeline are planned to be moved to a separate repository. Setup instructions for those components will be added once migrated.

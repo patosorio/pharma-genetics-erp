@@ -1,7 +1,7 @@
-# TODO: User, Location, Contact, Currency, Settings
+from decimal import Decimal
 from django.db import models
 from django.contrib.auth.models import AbstractUser
-
+from django.core.validators import MinValueValidator
 from django.conf import settings
 
 
@@ -134,7 +134,7 @@ class Contact(AuditMixin):
         return f"{self.name} ({self.get_contact_type_display()})"
 
 
-class Currency(models.Model):
+class Currency(AuditMixin):
     """Currency types (THB, USD, etc.)"""
     code = models.CharField(max_length=3, unique=True)
     name = models.CharField(max_length=50)
@@ -145,14 +145,24 @@ class Currency(models.Model):
         db_table = 'currencies'
         verbose_name_plural = 'Currencies'
     
+    def save(self, *args, **kwargs):
+        if self.is_default:
+            Currency.objects.exclude(pk=self.pk).update(is_default=False)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.code} ({self.symbol})"
 
 
-class TaxType(models.Model):
+class TaxType(AuditMixin):
     """Tax types (VAT, etc.)"""
     name = models.CharField(max_length=100, unique=True)
-    rate = models.DecimalField(max_digits=5, decimal_places=2)  # 7% = 7.00
+    rate = models.DecimalField(
+        max_digits=5,
+        decimal_places=2,
+        validators=[MinValueValidator(Decimal('0.01'))],
+        help_text='Tax rate as a percentage (e.g. 7.00 for 7%)',
+    )
     is_active = models.BooleanField(default=True)
     
     class Meta:

@@ -5,6 +5,11 @@ from sales.models import SalesInvoice
 from purchasing.models import PurchaseInvoice
 
 
+def _generate_report_number(period_start):
+    """Return TAX-YYYY-MM based on the period_start date."""
+    return f"TAX-{period_start.year}-{period_start.month:02d}"
+
+
 class TaxReport(AuditMixin):
     """
     Tax report for a specific period
@@ -13,7 +18,8 @@ class TaxReport(AuditMixin):
     report_number = models.CharField(
         max_length=50,
         unique=True,
-        help_text='Unique tax report identifier'
+        blank=True,
+        help_text='Unique tax report identifier (auto-generated as TAX-YYYY-MM if blank)'
     )
     period_start = models.DateField(
         help_text='Start date of reporting period'
@@ -79,9 +85,14 @@ class TaxReport(AuditMixin):
             models.Index(fields=['status']),
         ]
     
+    def save(self, *args, **kwargs):
+        if not self.report_number and self.period_start:
+            self.report_number = _generate_report_number(self.period_start)
+        super().save(*args, **kwargs)
+
     def __str__(self):
         return f"{self.report_number} ({self.period_start} to {self.period_end})"
-    
+
     def calculate_totals(self):
         """
         Calculate VAT payable, recoverable, and net position from invoices in period
@@ -213,13 +224,36 @@ class TaxJournalEntry(AuditMixin):
             ),
         ]
     
+    def save(self, *args, **kwargs):
+        if self.sales_invoice_id and not self.pk:
+            inv = self.sales_invoice
+            if not self.base_amount:
+                self.base_amount = inv.base_amount
+            if not self.tax_amount:
+                self.tax_amount = inv.tax_amount
+            if not self.entry_date:
+                self.entry_date = inv.invoice_date
+            if not self.tax_type_id and inv.tax_type_id:
+                self.tax_type_id = inv.tax_type_id
+        elif self.purchase_invoice_id and not self.pk:
+            inv = self.purchase_invoice
+            if not self.base_amount:
+                self.base_amount = inv.base_amount
+            if not self.tax_amount:
+                self.tax_amount = inv.tax_amount
+            if not self.entry_date:
+                self.entry_date = inv.invoice_date
+            if not self.tax_type_id and inv.tax_type_id:
+                self.tax_type_id = inv.tax_type_id
+        super().save(*args, **kwargs)
+
     def __str__(self):
         if self.sales_invoice:
             return f"{self.entry_type} - {self.sales_invoice.invoice_number}: {self.tax_amount}"
         elif self.purchase_invoice:
             return f"{self.entry_type} - {self.purchase_invoice.invoice_number}: {self.tax_amount}"
         return f"{self.entry_type} - {self.entry_date}"
-    
+
     def clean(self):
         """Validate that only one invoice type is set"""
         from django.core.exceptions import ValidationError

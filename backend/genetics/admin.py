@@ -3,8 +3,17 @@ from .models import StrainCategory, Strain
 
 @admin.register(StrainCategory)
 class StrainCategoryAdmin(admin.ModelAdmin):
-    list_display = ['name', 'description']
+    list_display = ['name', 'description', 'created_at', 'updated_at']
     search_fields = ['name']
+    readonly_fields = ['created_at', 'updated_at', 'created_by', 'updated_by']
+
+    fieldsets = (
+        ('Basic Information', {'fields': ('name', 'description')}),
+        ('Audit Trail', {
+            'fields': ('created_at', 'updated_at', 'created_by', 'updated_by'),
+            'classes': ('collapse',)
+        }),
+    )
 
 @admin.register(Strain)
 class StrainAdmin(admin.ModelAdmin):
@@ -28,10 +37,10 @@ class StrainAdmin(admin.ModelAdmin):
     ]
     search_fields = [
         'name',
-        'category',
-        'catalogue_year',
+        'category__name',
         'breeder',
-        'lineage'
+        'lineage',
+        'terpene_profile',
     ]
     readonly_fields = [
         'created_at',
