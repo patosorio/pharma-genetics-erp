@@ -43,6 +43,8 @@ htmlcov/
 # Project
 Makefile
 docs/
+mock_data.ts
+README_FINANCIAL_DASHBOARD.md
 # **/fixtures/
 
 .cursor/
